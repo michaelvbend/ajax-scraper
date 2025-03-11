@@ -1,12 +1,10 @@
-from dataclasses import asdict, dataclass
-import json
+from dataclasses import dataclass
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from variables import SITE_TO_SCRAPE, site_paths
-import time
+from selectors_list import SITE_TO_SCRAPE, SHOW_AS_LIST_PRODUCT_LINE, PRODUCT_LINE, ACTION_BUTTON_CONTAINER, SIGN_IN_NAME, PASSWORD, NEXT_BUTTON, SOLD_OUT_TEXT
 import os
 from dotenv import load_dotenv
 
@@ -16,75 +14,57 @@ load_dotenv()
 class MatchCard:
     fixture: str
     sold_out: bool
-       
-
-def main():
-    chrome_options = Options()
-    # chrome_options.add_argument("--headless")
-    driver = webdriver.Chrome(options=chrome_options)
-    driver.get(SITE_TO_SCRAPE)
-    username = os.getenv('username')
-    password = os.getenv('password')
-
-    email_input = wait_and_find_element(driver, By.ID, 'signInName')
-    email_input.clear()
-    email_input.send_keys(username)
-
-    password_input = wait_and_find_element(driver, By.ID, 'password')
-    password_input.clear()
-    password_input.send_keys(password)
-
-    button_submit = wait_and_find_element(driver, By.ID, 'next')
-    button_submit.click()
 
 def wait_and_find_element(driver, by, value, timeout=10):
     return WebDriverWait(driver, timeout).until(
         EC.presence_of_element_located((by, value))
     )
 
-    
-#     def scrapeBook(link):
-#         try:
-#             driver.get(link)
-#             script_tag = driver.find_element(By.XPATH, "//script[@type='application/ld+json']")
-#             json_content = script_tag.get_attribute('innerHTML')
-#             data = json.loads(json_content)
+def login(driver, username, password):
+    email_input = wait_and_find_element(driver, By.ID, SIGN_IN_NAME)
+    email_input.clear()
+    email_input.send_keys(username)
 
-#             description = data.get('description')
-#             title = data.get('name')
-#             author = data.get('author', {}).get('name')
-#             thumbnail = data.get('image', {}).get('url')
-#             published_date = data.get('workExample', [{}])[0].get('datePublished')
-#             page_count = data.get('workExample', [{}])[0].get('numberOfPages', '0')
-#             genre = data.get('genre', [])
-#             language = data.get('inLanguage')
-#             book = Book(title=title, thumbnail=thumbnail, description=description, author=author, published_date=published_date, page_count=page_count, 
-#                         genre=genre, language=language)
-#             print(f"Title: {title}")
-#             return book
-#         except Exception as e:
-#             print(e)
-#     # Actual scraping of the book data
-#     with open("book_data.json", "a", encoding='utf-8') as outfile:
-#         while page_number < amount_of_pages:
-#             driver.get(f'{SITE_TO_SCRAPE}?page={page_number}')
-#             elements = driver.find_elements(By.XPATH, site_paths.get('books_on_page'))
-#             list_of_hrefs = [element.get_attribute('href') for element in elements]
-#             for link in list_of_hrefs:
-#                 try:
-#                     book = scrapeBook(link)
-#                     json.dump(asdict(book), outfile, ensure_ascii=False, indent=4)
-#                     outfile.write('\n') 
-#                 except Exception as e:
-#                     continue
-#             scraped_books = scraped_books + (page_number * books_on_pages)
-#             print(f"Bookcount: {scraped_books}")
-#             time.sleep(5)
-#             page_number += 1
-#     driver.quit()
+    password_input = wait_and_find_element(driver, By.ID, PASSWORD)
+    password_input.clear()
+    password_input.send_keys(password)
 
-# def login():
+    button_submit = wait_and_find_element(driver, By.ID, NEXT_BUTTON)
+    button_submit.click()
 
+def scrape_match_cards(driver):
+    parent_div = wait_and_find_element(driver, By.CLASS_NAME, SHOW_AS_LIST_PRODUCT_LINE)
+    child_divs = parent_div.find_elements(By.CLASS_NAME, PRODUCT_LINE)
+
+    match_cards = []
+    for index, child in enumerate(child_divs):
+        try:
+            fixture = child.find_element(By.TAG_NAME, "h3").text
+            action_buttons = child.find_element(By.CLASS_NAME, ACTION_BUTTON_CONTAINER)
+            action_button_text = action_buttons.find_element(By.TAG_NAME, "span").text
+            sold_out_status = True if action_button_text == SOLD_OUT_TEXT else False
+            matchcard = MatchCard(fixture=fixture, sold_out=sold_out_status)
+            match_cards.append(matchcard)
+        except Exception as e:
+            print(f"Div {index + 1}: Something went wrong while scraping child div. Error: {e}")
+    return match_cards
+
+def main():
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    driver = webdriver.Chrome(options=chrome_options)
+    driver.get(SITE_TO_SCRAPE)
+
+    username = os.getenv('shopUsername')
+    password = os.getenv('shopPassword')
+
+    if not username or not password:
+        raise ValueError("Username or password environment variables are not set")
+
+    login(driver, username, password)
+    match_cards = scrape_match_cards(driver)
+    for matchcard in match_cards:
+        print(matchcard)
 
 if __name__ == "__main__":
     main()
