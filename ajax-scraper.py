@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 @dataclass
-class MatchCard:
+class Match:
     fixture: str
     sold_out: bool
 
@@ -19,6 +19,11 @@ def wait_and_find_element(driver, by, value, timeout=10):
     return WebDriverWait(driver, timeout).until(
         EC.presence_of_element_located((by, value))
     )
+
+def determine_if_match_sold_out(child):
+    action_buttons = child.find_element(By.CLASS_NAME, ACTION_BUTTON_CONTAINER)
+    action_button_text = action_buttons.find_element(By.TAG_NAME, "span").text
+    return True if action_button_text == SOLD_OUT_TEXT else False
 
 def login(driver, username, password):
     email_input = wait_and_find_element(driver, By.ID, SIGN_IN_NAME)
@@ -40,11 +45,9 @@ def scrape_match_cards(driver):
     for index, child in enumerate(child_divs):
         try:
             fixture = child.find_element(By.TAG_NAME, "h3").text
-            action_buttons = child.find_element(By.CLASS_NAME, ACTION_BUTTON_CONTAINER)
-            action_button_text = action_buttons.find_element(By.TAG_NAME, "span").text
-            sold_out_status = True if action_button_text == SOLD_OUT_TEXT else False
-            matchcard = MatchCard(fixture=fixture, sold_out=sold_out_status)
-            match_cards.append(matchcard)
+            sold_out_status = determine_if_match_sold_out(child)
+            match = Match(fixture=fixture, sold_out=sold_out_status)
+            match_cards.append(match)
         except Exception as e:
             print(f"Div {index + 1}: Something went wrong while scraping child div. Error: {e}")
     return match_cards
