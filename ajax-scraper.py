@@ -108,14 +108,7 @@ def job():
     call_api_for_available_match(match_cards)
 
 def main():
-    schedule.every(3).minutes.do(job)
-
-    while True:
-        try:
-            schedule.run_pending()
-            time.sleep(1)
-        except:
-            continue;
+    job()
 
 if __name__ == "__main__":
     main()
