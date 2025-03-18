@@ -7,7 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selectors_list import SITE_TO_SCRAPE, SHOW_AS_LIST_PRODUCT_LINE, PRODUCT_LINE, ACTION_BUTTON_CONTAINER, SIGN_IN_NAME, PASSWORD, NEXT_BUTTON, SOLD_OUT_TEXT
 import os
 import requests
-import schedule
+import shutil
 import tempfile
 from datetime import datetime
 import time
@@ -94,6 +94,7 @@ def call_api_for_available_match(match_list):
     else:
         print(f"Failed to notify for match: {match.fixture}, Status Code: {response.status_code}")
 
+
 def job():
     user_data_dir = tempfile.mkdtemp()
 
@@ -105,19 +106,30 @@ def job():
     chrome_options.add_argument("--remote-debugging-port=9222")  # Add this line to fix DevToolsActivePort issue
 
     driver = webdriver.Chrome(options=chrome_options)
-    driver.get(SITE_TO_SCRAPE)
 
-    username = os.getenv('shopUsername')
-    password = os.getenv('shopPassword')
+    try:
+        driver.get(SITE_TO_SCRAPE)
 
-    if not username or not password:
-        raise ValueError("Username or password environment variables are not set")
+        username = os.getenv('shopUsername')
+        password = os.getenv('shopPassword')
 
-    login(driver, username, password)
-    match_cards = scrape_match_cards(driver)
-    for matchcard in match_cards:
-        print(matchcard)
-    call_api_for_available_match(match_cards)
+        if not username or not password:
+            raise ValueError("Username or password environment variables are not set")
+
+        login(driver, username, password)
+        match_cards = scrape_match_cards(driver)
+
+        for matchcard in match_cards:
+            print(matchcard)
+
+        call_api_for_available_match(match_cards)
+
+    except Exception as e:
+        print(f"Job failed with error: {e}")
+
+    finally:
+        driver.quit()  # Ensure ChromeDriver closes
+        shutil.rmtree(user_data_dir, ignore_errors=True)  # Clean up temp directory
 
 def main():
     while True:
