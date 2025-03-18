@@ -20,7 +20,7 @@ class Match:
     sold_out: bool
     match_link: str
 
-def wait_and_find_element(driver, by, value, timeout=10):
+def wait_and_find_element(driver, by, value, timeout=30):
     return WebDriverWait(driver, timeout).until(
         EC.presence_of_element_located((by, value))
     )
