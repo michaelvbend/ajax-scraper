@@ -9,6 +9,7 @@ import os
 import requests
 import schedule
 import tempfile
+from datetime import datetime
 import time
 from dotenv import load_dotenv
 
@@ -20,7 +21,7 @@ class Match:
     sold_out: bool
     match_link: str
 
-def wait_and_find_element(driver, by, value, timeout=30):
+def wait_and_find_element(driver, by, value, timeout=50):
     return WebDriverWait(driver, timeout).until(
         EC.presence_of_element_located((by, value))
     )
@@ -44,6 +45,7 @@ def login(driver, username, password):
     print("Login succesful!")
 
 def scrape_match_cards(driver):
+    print("Scraping match")
     parent_div = wait_and_find_element(driver, By.CLASS_NAME, SHOW_AS_LIST_PRODUCT_LINE)
     child_divs = parent_div.find_elements(By.CLASS_NAME, PRODUCT_LINE)
 
@@ -65,6 +67,7 @@ def scrape_match_cards(driver):
     return match_cards
 
 def call_api_for_available_match(match_list):
+    print("calling backend to update matches")
     api_url = "https://goldfish-app-mpxfi.ondigitalocean.app/api/matches"
     payload = {
         "matches": []
@@ -117,7 +120,14 @@ def job():
     call_api_for_available_match(match_cards)
 
 def main():
-    job()
+    while True:
+        try:
+            job()
+            print(f"Job completed succesfully at: {datetime.now()}")
+            break
+        except Exception as e:
+            print(f"Job failed with error: {e}. Retrying in 5 seconds...")
+            time.sleep(5)
 
 if __name__ == "__main__":
     main()
