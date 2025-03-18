@@ -44,6 +44,7 @@ def login(driver, username, password):
     print("Login succesful!")
 
 def scrape_match_cards(driver):
+    print(SHOW_AS_LIST_PRODUCT_LINE)
     parent_div = wait_and_find_element(driver, By.CLASS_NAME, SHOW_AS_LIST_PRODUCT_LINE)
     child_divs = parent_div.find_elements(By.CLASS_NAME, PRODUCT_LINE)
 
