@@ -34,6 +34,7 @@ def login(driver, username, password):
     email_input = wait_and_find_element(driver, By.ID, SIGN_IN_NAME)
     email_input.clear()
     email_input.send_keys(username)
+    print(username)
 
     password_input = wait_and_find_element(driver, By.ID, PASSWORD)
     password_input.clear()
