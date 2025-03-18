@@ -98,6 +98,8 @@ def job():
     chrome_options.add_argument("--no-sandbox")  # Optional: for security
     chrome_options.add_argument("--disable-dev-shm-usage")  # Optional: for stability
     chrome_options.add_argument(f"--user-data-dir={user_data_dir}")  # Specify unique user data directory
+    chrome_options.add_argument("--remote-debugging-port=9222")  # Add this line to fix DevToolsActivePort issue
+
     driver = webdriver.Chrome(options=chrome_options)
     driver.get(SITE_TO_SCRAPE)
 
