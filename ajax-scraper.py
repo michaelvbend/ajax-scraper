@@ -6,6 +6,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selectors_list import SITE_TO_SCRAPE, SHOW_AS_LIST_PRODUCT_LINE, PRODUCT_LINE, ACTION_BUTTON_CONTAINER, SIGN_IN_NAME, PASSWORD, NEXT_BUTTON, SOLD_OUT_TEXT
 import os
+import requests
+import schedule
+import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,6 +17,7 @@ load_dotenv()
 class Match:
     fixture: str
     sold_out: bool
+    match_link: str
 
 def wait_and_find_element(driver, by, value, timeout=10):
     return WebDriverWait(driver, timeout).until(
@@ -45,14 +49,47 @@ def scrape_match_cards(driver):
     for index, child in enumerate(child_divs):
         try:
             fixture = child.find_element(By.TAG_NAME, "h3").text
+            action_buttons = child.find_element(By.CLASS_NAME, ACTION_BUTTON_CONTAINER)
+            try:
+                link = action_buttons.find_element(By.TAG_NAME, "a").get_attribute("href")
+            except Exception:
+                link = None
+            
             sold_out_status = determine_if_match_sold_out(child)
-            match = Match(fixture=fixture, sold_out=sold_out_status)
+            match = Match(fixture=fixture, sold_out=sold_out_status, match_link=link)
             match_cards.append(match)
         except Exception as e:
             print(f"Div {index + 1}: Something went wrong while scraping child div. Error: {e}")
     return match_cards
 
-def main():
+def call_api_for_available_match(match_list):
+    api_url = "https://goldfish-app-mpxfi.ondigitalocean.app/api/matches"
+    payload = {
+        "matches": []
+    }
+    for match in match_list:
+        sold_out = False;
+       
+        home_team, away_team = match.fixture.split(" - ")
+        if (away_team == 'AZ'):
+            sold_out = True;
+        else:
+            sold_out = match.sold_out
+        matchRequest = {
+                "homeTeam": home_team,
+                "awayTeam": away_team,
+                "soldOut": sold_out,
+                "matchLink": match.match_link
+            }
+        payload['matches'].append(matchRequest)
+        
+    response = requests.put(api_url, json=payload)
+    if response.status_code == 204:
+        print(f"Successfully notified for match: {match.fixture}")
+    else:
+        print(f"Failed to notify for match: {match.fixture}, Status Code: {response.status_code}")
+
+def job():
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     driver = webdriver.Chrome(options=chrome_options)
@@ -68,6 +105,17 @@ def main():
     match_cards = scrape_match_cards(driver)
     for matchcard in match_cards:
         print(matchcard)
+    call_api_for_available_match(match_cards)
+
+def main():
+    schedule.every(3).minutes.do(job)
+
+    while True:
+        try:
+            schedule.run_pending()
+            time.sleep(1)
+        except:
+            continue;
 
 if __name__ == "__main__":
     main()
