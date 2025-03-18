@@ -41,6 +41,7 @@ def login(driver, username, password):
 
     button_submit = wait_and_find_element(driver, By.ID, NEXT_BUTTON)
     button_submit.click()
+    print("Login succesful!")
 
 def scrape_match_cards(driver):
     parent_div = wait_and_find_element(driver, By.CLASS_NAME, SHOW_AS_LIST_PRODUCT_LINE)
