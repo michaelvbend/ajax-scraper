@@ -8,6 +8,7 @@ from selectors_list import SITE_TO_SCRAPE, SHOW_AS_LIST_PRODUCT_LINE, PRODUCT_LI
 import os
 import requests
 import schedule
+import tempfile
 import time
 from dotenv import load_dotenv
 
@@ -90,8 +91,13 @@ def call_api_for_available_match(match_list):
         print(f"Failed to notify for match: {match.fixture}, Status Code: {response.status_code}")
 
 def job():
+    user_data_dir = tempfile.mkdtemp()
+
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")  # Run in headless mode
+    chrome_options.add_argument("--no-sandbox")  # Optional: for security
+    chrome_options.add_argument("--disable-dev-shm-usage")  # Optional: for stability
+    chrome_options.add_argument(f"--user-data-dir={user_data_dir}")  # Specify unique user data directory
     driver = webdriver.Chrome(options=chrome_options)
     driver.get(SITE_TO_SCRAPE)
 
