@@ -96,7 +96,7 @@ def call_api_for_available_match(match_list):
 
 
 def job():
-    user_data_dir = tempfile.mkdtemp()
+    user_data_dir = tempfile.mkdtemp(dir="/var/tmp")
 
     chrome_options = Options()
     chrome_options.add_argument("--headless")  # Run in headless mode
