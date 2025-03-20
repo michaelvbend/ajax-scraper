@@ -106,8 +106,6 @@ def job():
     chrome_options.add_argument("--remote-debugging-port=9222")  # Add this line to fix DevToolsActivePort issue
 
     driver = webdriver.Chrome(options=chrome_options)
-    if os.path.exists(user_data_dir):
-        print("os path exists")
 
     try:
         driver.get(SITE_TO_SCRAPE)
@@ -129,22 +127,9 @@ def job():
     except Exception as e:
         print(f"Job failed with error: {e}")
 
-   
     finally:
-        try:
-            driver.quit()  # Ensure ChromeDriver closes
-        except Exception as e:
-            print(f"Error while quitting the driver: {e}")
-
-        try:
-            shutil.rmtree(user_data_dir, ignore_errors=True)  # Clean up temp directory
-            if os.path.exists(user_data_dir):
-                print(f"Warning: Temporary directory {user_data_dir} was not fully removed.")
-            else:    
-                print(f"Info: Temporary directory {user_data_dir} was fully removed.")
-
-        except Exception as e:
-            print(f"Error while removing temporary directory: {e}")
+        driver.quit()  # Ensure ChromeDriver closes
+        shutil.rmtree(user_data_dir, ignore_errors=True)  # Clean up temp directory
 
 def main():
     while True:
