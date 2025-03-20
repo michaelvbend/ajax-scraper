@@ -96,7 +96,7 @@ def call_api_for_available_match(match_list):
 
 
 def job():
-    user_data_dir = tempfile.mkdtemp(dir="/var/tmp")
+    user_data_dir = tempfile.mkdtemp()
 
     chrome_options = Options()
     chrome_options.add_argument("--headless")  # Run in headless mode
@@ -127,9 +127,19 @@ def job():
     except Exception as e:
         print(f"Job failed with error: {e}")
 
+   
     finally:
-        driver.quit()  # Ensure ChromeDriver closes
-        shutil.rmtree(user_data_dir, ignore_errors=True)  # Clean up temp directory
+        try:
+            driver.quit()  # Ensure ChromeDriver closes
+        except Exception as e:
+            print(f"Error while quitting the driver: {e}")
+
+        try:
+            shutil.rmtree(user_data_dir, ignore_errors=True)  # Clean up temp directory
+            if os.path.exists(user_data_dir):
+                print(f"Warning: Temporary directory {user_data_dir} was not fully removed.")
+        except Exception as e:
+            print(f"Error while removing temporary directory: {e}")
 
 def main():
     while True:
